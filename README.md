@@ -1,6 +1,8 @@
 # rotate
 `rotate` is a file rolling package for Go
 
+The package is similar to [lumberjack](https://github.com/natefinch/lumberjack) but reduces the use of channel feature 
+
 ## How to use
 ```go
 writer, _ := rotate.NewRotateWriter(
