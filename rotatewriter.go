@@ -18,8 +18,9 @@ import (
 )
 
 var (
-	ErrLogFileClosed = errors.New("logger: log writer closed")
-	ErrDataOversize  = errors.New("logger: data size exceeds maximum")
+	ErrFileNameIsEmpty = errors.New("looger: file name is empty")
+	ErrLogFileClosed   = errors.New("logger: log writer closed")
+	ErrDataOversize    = errors.New("logger: data size exceeds maximum")
 )
 
 type (
@@ -44,7 +45,7 @@ type (
 		timeFormat string
 		gzip       bool
 		localTime  bool
-		keepDays   int64
+		maxDays    int64
 		maxSize    int64
 		maxBackups int64
 	}
@@ -55,13 +56,16 @@ var _ io.WriteCloser = (*RotateWriter)(nil)
 
 // NewRotateWriter rotate
 func NewRotateWriter(filename string, options ...RotateOption) (*RotateWriter, error) {
+	if len(filename) == 0 {
+		return nil, ErrFileNameIsEmpty
+	}
 	r := &RotateWriter{
 		filename: filename,
 		postCh:   make(chan string, 100), // no block channel
 		postDone: make(chan struct{}),
 	}
 	opt := &rotateOption{
-		keepDays:   defaultKeepDays,
+		maxDays:    defaultKeepDays,
 		maxSize:    defaultMaxSize * megabyte,
 		delimiter:  defaultDelimiter,
 		timeFormat: defaultTimeFormat,
@@ -88,10 +92,10 @@ func WithGzip(gzip bool) RotateOption {
 	}
 }
 
-// WithKeepDays
-func WithKeepDays(days int64) RotateOption {
+// WithMaxDays
+func WithMaxDays(days int64) RotateOption {
 	return func(o *rotateOption) {
-		o.keepDays = days
+		o.maxDays = days
 	}
 }
 
@@ -302,7 +306,7 @@ func (r *RotateWriter) compressFile(filename string) {
 
 // deleteOutdatedFiles
 func (r *RotateWriter) deleteOutdatedFiles() {
-	if r.opt.keepDays <= 0 {
+	if r.opt.maxDays <= 0 {
 		return
 	}
 	// get old files
@@ -314,7 +318,7 @@ func (r *RotateWriter) deleteOutdatedFiles() {
 		return
 	}
 	// get outdated boundary
-	boundary := dateline(r.opt.timeFormat, r.opt.localTime, -time.Hour*time.Duration(24*r.opt.keepDays))
+	boundary := dateline(r.opt.timeFormat, r.opt.localTime, -time.Hour*time.Duration(24*r.opt.maxDays))
 	var buf strings.Builder
 	_, _ = fmt.Fprintf(&buf, "%s%s%s%s", r.prefix, r.opt.delimiter, boundary, r.ext)
 	if r.opt.gzip {

@@ -39,15 +39,15 @@ func TestRotateWriter_NewRotateWriter(t *testing.T) {
 		keepDays:   30,
 		delimiter:  "-",
 		timeFormat: defaultTimeFormat,
-		gzip: true,
-		localTime: true,
+		gzip:       true,
+		localTime:  true,
 		maxBackups: 30,
 	}
 
 	writer, err := NewRotateWriter(
 		tmpFileName,
 		WithMaxSize(want.maxSize),
-		WithKeepDays(want.keepDays),
+		WithMaxDays(want.keepDays),
 		WithDelimiter(want.delimiter),
 		WithTimeFormat(want.timeFormat),
 		WithGzip(want.gzip),
@@ -57,7 +57,7 @@ func TestRotateWriter_NewRotateWriter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := writer.Write([]byte("test")); err !=nil {
+	if _, err := writer.Write([]byte("test")); err != nil {
 		t.Fatal(err)
 	}
 	if err := writer.Close(); err != nil {
@@ -109,15 +109,15 @@ func TestRotateWriter_Write(t *testing.T) {
 		}
 		if _, err := writer.Write([]byte("test")); err != nil {
 			t.Fatal(err)
-		}else if err = writer.Close(); err != nil {
+		} else if err = writer.Close(); err != nil {
 			t.Fatal(err)
 		}
 
 		if err := os.Remove(backupName); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(50*time.Millisecond)
-		if writer.opt.gzip  {
+		time.Sleep(50 * time.Millisecond)
+		if writer.opt.gzip {
 			backupName += ".gz"
 		}
 		if err := os.Remove(backupName); err != nil {
@@ -216,14 +216,14 @@ func TestRotateWriter_deleteOutdatedFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	writer, err := NewRotateWriter(tmpFileName, WithKeepDays(30))
+	writer, err := NewRotateWriter(tmpFileName, WithMaxDays(30))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tDate := time.Now().Add(-time.Hour*time.Duration(24*writer.opt.keepDays) - 24*time.Hour).Format(writer.opt.timeFormat)
+	tDate := time.Now().Add(-time.Hour*time.Duration(24*writer.opt.maxDays) - 24*time.Hour).Format(writer.opt.timeFormat)
 	if !writer.opt.localTime {
-		tDate = time.Now().UTC().Add(-time.Hour*time.Duration(24*writer.opt.keepDays) - 24*time.Hour).Format(writer.opt.timeFormat)
+		tDate = time.Now().UTC().Add(-time.Hour*time.Duration(24*writer.opt.maxDays) - 24*time.Hour).Format(writer.opt.timeFormat)
 	}
 	wantName := mockBackupName(writer.filename, tDate)
 	if fp, err := os.Create(wantName); err != nil {
@@ -241,7 +241,6 @@ func TestRotateWriter_deleteOutdatedFiles(t *testing.T) {
 		t.Fatalf("not delete %s", wantName)
 	}
 }
-
 
 func TestRotateWriter_deleteOverMaxFiles(t *testing.T) {
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "temp.log")
@@ -267,9 +266,9 @@ func TestRotateWriter_deleteOverMaxFiles(t *testing.T) {
 	wantFiles := make([]string, 0)
 	for i := 0; i < 6; i++ {
 		dur := 24 * time.Hour * time.Duration(i)
-		tDate := time.Now().Add(-time.Hour*time.Duration(24*writer.opt.keepDays) - dur).Format(writer.opt.timeFormat)
+		tDate := time.Now().Add(-time.Hour*time.Duration(24*writer.opt.maxDays) - dur).Format(writer.opt.timeFormat)
 		if !writer.opt.localTime {
-			tDate = time.Now().UTC().Add(-time.Hour*time.Duration(24*writer.opt.keepDays) - dur).Format(writer.opt.timeFormat)
+			tDate = time.Now().UTC().Add(-time.Hour*time.Duration(24*writer.opt.maxDays) - dur).Format(writer.opt.timeFormat)
 		}
 		wantName := mockBackupName(writer.filename, tDate)
 		if fp, err := os.Create(wantName); err != nil {
@@ -365,14 +364,14 @@ func TestRotateWriter_oldFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	writer, err := NewRotateWriter(tmpFileName, WithKeepDays(30))
+	writer, err := NewRotateWriter(tmpFileName, WithMaxDays(30))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tDate := time.Now().Add(-time.Hour*time.Duration(24*writer.opt.keepDays) - 24*time.Hour).Format(writer.opt.timeFormat)
+	tDate := time.Now().Add(-time.Hour*time.Duration(24*writer.opt.maxDays) - 24*time.Hour).Format(writer.opt.timeFormat)
 	if !writer.opt.localTime {
-		tDate = time.Now().UTC().Add(-time.Hour*time.Duration(24*writer.opt.keepDays) - 24*time.Hour).Format(writer.opt.timeFormat)
+		tDate = time.Now().UTC().Add(-time.Hour*time.Duration(24*writer.opt.maxDays) - 24*time.Hour).Format(writer.opt.timeFormat)
 	}
 	wantName := mockBackupName(writer.filename, tDate)
 	if fp, err := os.Create(wantName); err != nil {
