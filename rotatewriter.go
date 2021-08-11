@@ -77,22 +77,8 @@ func NewRotateWriter(filename string, options ...RotateOption) (*RotateWriter, e
 		return nil, err
 	}
 	// handle other thing like compress and delete outdated files
-	go r.postRotate()
+	go r.afterRotate()
 	return r, nil
-}
-
-// postRotate
-func (r *RotateWriter) postRotate() {
-	for {
-		select {
-		case filename := <-r.postCh:
-			r.compressFile(filename)
-			r.deleteOutdatedFiles()
-			r.deleteOverMaxFiles()
-		case <-r.postDone:
-			return
-		}
-	}
 }
 
 // WithGzip
@@ -120,6 +106,7 @@ func WithMaxSize(max int64) RotateOption {
 	}
 }
 
+// WithLocalTime
 func WithLocalTime(local bool) RotateOption {
 	return func(o *rotateOption) {
 		o.localTime = local
@@ -152,6 +139,20 @@ func WithTimeFormat(format string) RotateOption {
 			return
 		}
 		o.timeFormat = format
+	}
+}
+
+// afterRotate
+func (r *RotateWriter) afterRotate() {
+	for {
+		select {
+		case filename := <-r.postCh:
+			r.compressFile(filename)
+			r.deleteOutdatedFiles()
+			r.deleteOverMaxFiles()
+		case <-r.postDone:
+			return
+		}
 	}
 }
 
@@ -189,8 +190,8 @@ func (r *RotateWriter) backupFileName() string {
 	)
 }
 
-// oldFiles find outdated files by log layout pattern
-func (r *RotateWriter) oldFiles() ([]string, error) {
+// listFiles find outdated files by log layout pattern
+func (r *RotateWriter) listFiles() ([]string, error) {
 	var pattern string
 	if r.opt.gzip {
 		pattern = fmt.Sprintf("%s%s*%s.gz", r.prefix, r.opt.delimiter, r.ext)
@@ -305,7 +306,7 @@ func (r *RotateWriter) deleteOutdatedFiles() {
 		return
 	}
 	// get old files
-	files, err := r.oldFiles()
+	files, err := r.listFiles()
 	if err != nil {
 		r.mu.Lock()
 		defer r.mu.Unlock()
@@ -344,7 +345,7 @@ func (r *RotateWriter) deleteOverMaxFiles() {
 	if r.opt.maxBackups <= 0 {
 		return
 	}
-	oldFiles, err := r.oldFiles()
+	oldFiles, err := r.listFiles()
 	if err != nil {
 		r.mu.Lock()
 		defer r.mu.Unlock()

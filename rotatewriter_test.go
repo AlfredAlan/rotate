@@ -287,7 +287,7 @@ func TestRotateWriter_deleteOverMaxFiles(t *testing.T) {
 		t.Fatal(writer.err)
 	}
 
-	gotFiles, err := writer.oldFiles()
+	gotFiles, err := writer.listFiles()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +381,7 @@ func TestRotateWriter_oldFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	files, err := writer.oldFiles()
+	files, err := writer.listFiles()
 	if err != nil {
 		t.Fatal(err)
 	}
