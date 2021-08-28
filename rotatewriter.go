@@ -19,8 +19,8 @@ import (
 
 var (
 	ErrFileNameIsEmpty = errors.New("looger: file name is empty")
-	ErrLogFileClosed   = errors.New("logger: log writer closed")
-	ErrDataOversize    = errors.New("logger: data size exceeds maximum")
+	ErrLogFileClosed   = errors.New("base: log writer closed")
+	ErrDataOversize    = errors.New("base: model size exceeds maximum")
 )
 
 type (
@@ -65,7 +65,7 @@ func NewRotateWriter(filename string, options ...RotateOption) (*RotateWriter, e
 		postDone: make(chan struct{}),
 	}
 	opt := &rotateOption{
-		maxDays:    defaultKeepDays,
+		maxDays:    defaultMaxDays,
 		maxSize:    defaultMaxSize * megabyte,
 		delimiter:  defaultDelimiter,
 		timeFormat: defaultTimeFormat,
@@ -359,7 +359,7 @@ func (r *RotateWriter) deleteOverMaxFiles() {
 
 	sort.Strings(oldFiles)
 	remain := len(oldFiles)
-	if r.opt.maxBackups <= 0 && r.opt.maxBackups >= int64(remain) {
+	if r.opt.maxBackups <= 0 || r.opt.maxBackups >= int64(remain) {
 		return
 	}
 	overMaxFiles := oldFiles[:remain-int(r.opt.maxBackups)]
