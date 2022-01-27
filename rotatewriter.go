@@ -374,8 +374,6 @@ func (r *RotateWriter) deleteOverMaxFiles() {
 		defer r.mu.Unlock()
 		r.err = err
 	}
-
-	return
 }
 
 // gzipFile
