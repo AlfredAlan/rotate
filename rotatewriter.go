@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	ErrFileNameIsEmpty = errors.New("looger: file name is empty")
-	ErrLogFileClosed   = errors.New("base: log writer closed")
-	ErrDataOversize    = errors.New("base: model size exceeds maximum")
+	ErrFileNameIsEmpty = errors.New("error: file name is empty")
+	ErrLogFileClosed   = errors.New("error: log file closed")
+	ErrDataOversize    = errors.New("error: model size exceeds maximum")
 )
 
 type (
@@ -80,7 +80,7 @@ func NewRotateWriter(filename string, options ...RotateOption) (*RotateWriter, e
 	if err := r.init(); err != nil {
 		return nil, err
 	}
-	// handle other thing like compress and delete outdated files
+	// handle other thing like compress and remove outdated files
 	go r.afterRotate()
 	return r, nil
 }
@@ -125,13 +125,13 @@ func WithMaxBackups(max int64) RotateOption {
 }
 
 // WithDelimiter
-func WithDelimiter(del string) RotateOption {
+func WithDelimiter(s string) RotateOption {
 	return func(o *rotateOption) {
-		if len(del) == 0 {
+		if len(s) == 0 {
 			o.delimiter = defaultDelimiter
 			return
 		}
-		o.delimiter = del
+		o.delimiter = s
 	}
 }
 
@@ -152,8 +152,8 @@ func (r *RotateWriter) afterRotate() {
 		select {
 		case filename := <-r.postCh:
 			r.compressFile(filename)
-			r.deleteOutdatedFiles()
-			r.deleteOverMaxFiles()
+			r.removeOutdatedFiles()
+			r.removeOverMaxFiles()
 		case <-r.postDone:
 			return
 		}
@@ -304,8 +304,8 @@ func (r *RotateWriter) compressFile(filename string) {
 	}
 }
 
-// deleteOutdatedFiles
-func (r *RotateWriter) deleteOutdatedFiles() {
+// removeOutdatedFiles
+func (r *RotateWriter) removeOutdatedFiles() {
 	if r.opt.maxDays <= 0 {
 		return
 	}
@@ -344,8 +344,8 @@ func (r *RotateWriter) deleteOutdatedFiles() {
 	}
 }
 
-//deleteOverMaxFiles
-func (r *RotateWriter) deleteOverMaxFiles() {
+// removeOverMaxFiles
+func (r *RotateWriter) removeOverMaxFiles() {
 	if r.opt.maxBackups <= 0 {
 		return
 	}

@@ -57,7 +57,7 @@ func TestRotateWriter_NewRotateWriter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := writer.Write([]byte("test")); err !=nil {
+	if _, err := writer.Write([]byte("test")); err != nil {
 		t.Fatal(err)
 	}
 	if err := writer.Close(); err != nil {
@@ -109,15 +109,15 @@ func TestRotateWriter_Write(t *testing.T) {
 		}
 		if _, err := writer.Write([]byte("test")); err != nil {
 			t.Fatal(err)
-		}else if err = writer.Close(); err != nil {
+		} else if err = writer.Close(); err != nil {
 			t.Fatal(err)
 		}
 
 		if err := os.Remove(backupName); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(50*time.Millisecond)
-		if writer.opt.gzip  {
+		time.Sleep(50 * time.Millisecond)
+		if writer.opt.gzip {
 			backupName += ".gz"
 		}
 		if err := os.Remove(backupName); err != nil {
@@ -201,7 +201,7 @@ func TestRotateWriter_compressFile(t *testing.T) {
 	}
 }
 
-func TestRotateWriter_deleteOutdatedFiles(t *testing.T) {
+func TestRotateWriter_removeOutdatedFiles(t *testing.T) {
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "temp.log")
 	if err != nil {
 		t.Fatal(err)
@@ -232,7 +232,7 @@ func TestRotateWriter_deleteOutdatedFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	writer.deleteOutdatedFiles()
+	writer.removeOutdatedFiles()
 	if writer.err != nil {
 		t.Fatal(writer.err)
 	}
@@ -242,8 +242,7 @@ func TestRotateWriter_deleteOutdatedFiles(t *testing.T) {
 	}
 }
 
-
-func TestRotateWriter_deleteOverMaxFiles(t *testing.T) {
+func TestRotateWriter_removeOverMaxFiles(t *testing.T) {
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "temp.log")
 	if err != nil {
 		t.Fatal(err)
@@ -282,7 +281,7 @@ func TestRotateWriter_deleteOverMaxFiles(t *testing.T) {
 	sort.Strings(wantFiles)
 	wantFiles = wantFiles[len(wantFiles)-maxBackups:]
 
-	writer.deleteOverMaxFiles()
+	writer.removeOverMaxFiles()
 	if writer.err != nil {
 		t.Fatal(writer.err)
 	}
